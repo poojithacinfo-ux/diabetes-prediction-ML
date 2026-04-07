@@ -1,0 +1,157 @@
+from matplotlib import pyplot as plt
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+df = pd.read_csv("diabetes123.csv")
+X = df.drop("Outcome", axis=1)
+y = df["Outcome"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+models = {
+    "Logistic Regression": LogisticRegression(),
+    "Decision Tree": DecisionTreeClassifier(),
+    "Random Forest": RandomForestClassifier(),
+    "KNN": KNeighborsClassifier(),
+    "SVM": SVC(),
+    "Naive Bayes": GaussianNB()
+}
+results = []
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    rec = recall_score(y_test, y_pred)
+
+    results.append([name, acc, prec, rec])
+results_df = pd.DataFrame(results, columns=["Model", "Accuracy", "Precision", "Recall"])
+print("\nModel Comparison:\n")
+print(results_df)
+plt.figure()
+plt.bar(results_df["Model"], results_df["Accuracy"])
+plt.xticks(rotation=45)
+plt.title("Model Accuracy Comparison")
+plt.show()
+plt.figure()
+x = results_df["Model"]
+plt.plot(x, results_df["Precision"], marker='o', label="Precision")
+plt.plot(x, results_df["Recall"], marker='o', label="Recall")
+plt.xticks(rotation=45)
+plt.title("Precision vs Recall")
+plt.legend()
+plt.show()
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+cm = confusion_matrix(y_test, models["Random Forest"].predict(X_test))
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+disp.plot()
+plt.title("Confusion Matrix - Random Forest")
+plt.show()
+from sklearn.metrics import roc_curve, auc
+plt.figure()
+for name, model in models.items():
+    if hasattr(model, "predict_proba"):
+        y_prob = model.predict_proba(X_test)[:, 1]
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        plt.plot(fpr, tpr, label=name)
+plt.plot([0,1], [0,1], linestyle='--')
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve")
+plt.legend()
+plt.show()
+import pandas as pd
+importances = models["Random Forest"].feature_importances_
+features = X.columns
+plt.figure()
+plt.barh(features, importances)
+plt.title("Feature Importance (Random Forest)")
+plt.show()
+plt.figure()
+plt.bar(results_df["Model"], results_df["Accuracy"])
+plt.xticks(rotation=45)
+plt.title("Model Accuracy Comparison")
+plt.show()
+
+# ===== FINAL INTERPRETATION =====
+
+print("\n===== FINAL ANALYSIS =====\n")
+
+
+best_model = results_df.loc[results_df["Accuracy"].idxmax()]
+
+print(f"Best Model: {best_model['Model']}")
+print(f"Accuracy: {best_model['Accuracy']:.2f}")
+
+
+best_recall_model = results_df.loc[results_df["Recall"].idxmax()]
+
+print("\nMedical Insight:")
+print(f"Model with highest Recall: {best_recall_model['Model']}")
+print("High recall means fewer diabetic patients are missed.")
+
+
+best_precision_model = results_df.loc[results_df["Precision"].idxmax()]
+
+print(f"\nModel with highest Precision: {best_precision_model['Model']}")
+print("High precision means fewer false alarms.")
+
+
+import numpy as np
+
+rf_model = models["Random Forest"]
+importances = rf_model.feature_importances_
+features = X.columns
+
+
+top_index = np.argmax(importances)
+top_feature = features[top_index]
+
+print("\nFeature Importance Insight:")
+print(f"Most important feature for prediction: {top_feature}")
+
+
+print("\n===== FINAL CONCLUSION =====")
+
+print(f"The best performing model is {best_model['Model']} based on accuracy.")
+
+print("In healthcare problems like diabetes prediction, recall is very important.")
+print(f"{best_recall_model['Model']} is best at identifying diabetic patients.")
+
+print(f"The most influential factor affecting diabetes is {top_feature}.")
+
+diabetes_count = df["Outcome"].sum()
+total = len(df)
+
+print(f"Total People: {total}")
+print(f"People with Diabetes: {diabetes_count}")
+print(f"People without Diabetes: {total - diabetes_count}")
+
+percentage = (diabetes_count / total) * 100
+
+print(f"Percentage with Diabetes: {percentage:.2f}%")
+
+import matplotlib.pyplot as plt
+
+counts = df["Outcome"].value_counts()
+
+plt.figure()
+plt.bar(["No Diabetes", "Diabetes"], counts)
+plt.title("Diabetes Distribution")
+plt.show()
+
+print("\nDataset Insight:")
+if percentage > 50:
+    print("Majority of people in dataset have diabetes.")
+else:
+    print("Majority of people in dataset do NOT have diabetes.")
+
